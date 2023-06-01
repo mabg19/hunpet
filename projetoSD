@@ -1,0 +1,64 @@
+#include <Servo.h>
+//#include <Wire.h>
+//#include "RTClib.h"
+
+Servo servo;
+const int pinoLED = 3;
+const int pinoPIR = 8;
+const int pinoSERVO = 2;
+
+int tempoDispensa = 2;
+int tempoEspera = 15;
+
+bool ledAtivado = false;
+bool servoAtivado = false;
+//bool dispensarComida = false
+
+void setup() {
+
+  Serial.begin(9600);
+
+  pinMode(pinoLED, OUTPUT);
+  pinMode(pinoPIR, INPUT);
+
+  servo.attach(2);
+  servo.write(15);
+
+}
+
+void loop() {
+  
+  if ((digitalRead(pinoPIR) == HIGH) && (ledAtivado == false) && (servoAtivado == false)) {
+    digitalWrite(pinoLED, HIGH);
+    Serial.println("Ativado");
+    ledAtivado = true;
+    servoAtivado = true;
+  }
+  else if (servoAtivado == true){
+    servoAtivado = false;
+    ledAtivado = false;
+
+    delay(3000);
+    servo.write(90);
+    Serial.println("Dispensando comida.");
+
+    delay(1000*tempoDispensa);
+    servo.write(15);
+    Serial.println("Comida dispensada.");
+
+    digitalWrite(pinoLED, LOW);
+    Serial.println("Desativado");
+
+    Serial.println("Espere 15 segundos para dispensar novamente.");
+    delay(1000*tempoEspera);
+    Serial.println("Preparado para ativar.");
+  }
+}
+
+//  DateTime now = rtc.now();
+//  if (dispensarComida!= false) {
+//  if((agora.hour() == 16) && (agora.minute() == 0)) {
+//    servo.write(90);
+//    delay(3000)
+//    servo.write(0);
+//    dispensarComida = true
