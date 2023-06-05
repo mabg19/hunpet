@@ -1,6 +1,8 @@
+#include <Wire.h>
 #include <Servo.h>
-//#include <Wire.h>
-//#include "RTClib.h"
+#include <DS3231.h>
+
+DS3231 RTC;
 
 Servo servo;
 const int pinoLED = 3;
@@ -8,57 +10,67 @@ const int pinoPIR = 8;
 const int pinoSERVO = 2;
 
 int tempoDispensa = 2;
-int tempoEspera = 15;
+int tempoEspera = 30;
 
 bool ledAtivado = false;
 bool servoAtivado = false;
-//bool dispensarComida = false
+bool h12;
+bool hPM;
 
 void setup() {
-
   Serial.begin(9600);
+  Wire.begin();
 
   pinMode(pinoLED, OUTPUT);
   pinMode(pinoPIR, INPUT);
 
-  servo.attach(2);
+  servo.attach(pinoSERVO);
   servo.write(15);
 
+  servo.attach(pinoSERVO);
+  servo.write(15);
+
+  // byte hour = 10;
+  // RTC.setHour(hour);
+  // RTC.setMinute(20);
+  // RTC.setSecond(0);
 }
 
 void loop() {
+  byte hour = RTC.getHour(h12, hPM);
+  byte minute = RTC.getMinute();
+  byte second = RTC.getSecond();
   
-  if ((digitalRead(pinoPIR) == HIGH) && (ledAtivado == false) && (servoAtivado == false)) {
+  if ((hour == 10 && minute == 37 && second == 0) || (hour == 10 && minute == 38 && second == 0)) {
+    servoAtivado = true;
+    ledAtivado = true;
+    Serial.println("Horário Agendado Ativado.");
+    delay(100);
+  }
+
+  if ((digitalRead(pinoPIR) == HIGH) && !ledAtivado && !servoAtivado) {
     digitalWrite(pinoLED, HIGH);
-    Serial.println("Ativado");
+    Serial.println("Sensor de movimento Ativado.");
     ledAtivado = true;
     servoAtivado = true;
-  }
-  else if (servoAtivado == true){
+
+   } else if (servoAtivado == true && ledAtivado == true) {
     servoAtivado = false;
     ledAtivado = false;
 
     delay(3000);
-    servo.write(90);
+    servo.write(75);
     Serial.println("Dispensando comida.");
 
-    delay(1000*tempoDispensa);
+    delay(1000 * tempoDispensa);
     servo.write(15);
     Serial.println("Comida dispensada.");
 
     digitalWrite(pinoLED, LOW);
     Serial.println("Desativado");
 
-    Serial.println("Espere 15 segundos para dispensar novamente.");
-    delay(1000*tempoEspera);
+    Serial.println("Espere 30 segundos para dispensar novamente.");
+    delay(1000 * tempoEspera);
     Serial.println("Preparado para ativar.");
   }
 }
-
-//  DateTime now = rtc.now();
-//  if (dispensarComida!= false) {
-//  if((agora.hour() == 16) && (agora.minute() == 0)) {
-//    servo.write(90);
-//    delay(3000)
-//    servo.write(0);
-//    dispensarComida = true
